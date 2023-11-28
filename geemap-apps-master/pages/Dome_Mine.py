@@ -3,12 +3,16 @@ import streamlit as st
 import geemap.foliumap as geemap
 import plotly.express as px
 import plotly.graph_objects as go
-import extra_streamlit_components as stx
-
 import numpy as np
-import geemap.colormaps as cm
+
 
 # Get an NLCD image by year.
+@st.cache_data
+def ee_authenticate(token_name="EARTHENGINE_TOKEN"):
+    geemap.ee_initialize(token_name=token_name)
+
+
+ee_authenticate(token_name="EARTHENGINE_TOKEN")
 
 ee.Initialize()
 
