@@ -4,7 +4,7 @@ import geemap.foliumap as geemap
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-
+import time
 
 # Get an NLCD image by year.
 @st.cache_data
@@ -15,7 +15,7 @@ def ee_authenticate(token_name="EARTHENGINE_TOKEN"):
 ee_authenticate(token_name="EARTHENGINE_TOKEN")
 
 ee.Initialize()
-
+start = time.time()
 def calculate_ndvi(image):
     return (image.select('B8').subtract(image.select('B4'))).divide(image.select('B8').add(image.select('B4'))).rename('NDVI').set('year', ee.Date(image.get('system:time_start')).get('year'))
 def calculate_ndwi1(image):
@@ -87,24 +87,25 @@ def get_params(index):
 
 
 def lineplot(index):
-    means = []
-    medians = []
-    modes = []
-    mean_value = dataset.select(index).toBands().reduceRegion(
+    # Retrieve data in a single call
+    stat_bands = [f"{i}_{index}_{stat}" for i in range(6) for stat in ['mean', 'median', 'mode']]
+    stats_data = dataset.select(index).toBands().reduceRegion(
         reducer=reducer,
         geometry=dome,
         scale=30  # Adjust the scale as needed
-    )
-    for i in range(0, 6):
-        means.append(mean_value.get(f"{i}_{index}_mean").getInfo())
-        medians.append(mean_value.get(f"{i}_{index}_median").getInfo())
-        modes.append(mean_value.get(f"{i}_{index}_mode").getInfo())
+    ).getInfo()
+
+    # Extract mean, median, and mode values using list comprehension
+    means = [stats_data[f"{i}_{index}_mean"] for i in range(6)]
+    medians = [stats_data[f"{i}_{index}_median"] for i in range(6)]
+    modes = [stats_data[f"{i}_{index}_mode"] for i in range(6)]
+
+    # Create the plot
     fig = go.Figure()
 
     # Add traces for means, medians, and modes
-    fig.add_trace(go.Scatter(x=years, y=means, mode='lines+markers', name='Średnia'))
-    fig.add_trace(go.Scatter(x=years, y=medians, mode='lines+markers', name='Mediana'))
-    fig.add_trace(go.Scatter(x=years, y=modes, mode='lines+markers', name='Moda'))
+    for name, values in [('Średnia', means), ('Mediana', medians), ('Moda', modes)]:
+        fig.add_trace(go.Scatter(x=years, y=values, mode='lines+markers', name=name))
 
     # Update layout
     fig.update_layout(
@@ -114,8 +115,10 @@ def lineplot(index):
         showlegend=True
     )
 
-    # Show the Plotly chart
     st.plotly_chart(fig, use_container_width=True)
+
+    # Show the Plotly chart
+
 palettes_gee = {"NDWI1": 'RdYlBu', "NDVI": 'ndvi', "NMDI": 'YlGnBu'}
 palettes_hist = {"NDWI1": px.colors.diverging.RdYlBu, "NDVI": px.colors.diverging.RdYlGn, "NMDI": px.colors.sequential.YlGnBu}
 text = {"NDWI1": 'RdYlBu',
@@ -177,6 +180,7 @@ reducer = ee.Reducer.mean().combine(
 # Convert the reduced collection to a FeatureCollection
 
 
+
 # Select the seven NLCD epochs after 2000.
 years = [2018, 2019, 2020, 2021, 2022, 2023]
 indices = ['NDVI',  'EVI', 'NDWI1', 'NDWI2', 'NMDI', 'MSI', 'MSAVI2']
@@ -185,6 +189,8 @@ with row1_col3:
     index = st.selectbox("Select a index", indices)
     add_legend = st.checkbox("Show legend")
     lineplot(index)
+
+
 
 if year:
     if index:
@@ -218,3 +224,9 @@ else:
     with row1_col2:
         Map.to_streamlit(height=600)
 
+
+# print the difference between start
+# and end time in milli. secs
+end = time.time()
+print("The time of execution of above program is :",
+      (end - start) * 10 ** 3, "ms")
