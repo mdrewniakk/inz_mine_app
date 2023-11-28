@@ -103,9 +103,10 @@ def calc_indices(images, bound):
 
 def lineplot(index):
     # Retrieve data in a single call
+    stat_bands = [f"{i}_{index}_{stat}" for i in range(6) for stat in ['mean', 'median', 'mode']]
     stats_data = dataset.select(index).toBands().reduceRegion(
         reducer=reducer,
-        geometry=dome,
+        geometry=cerro,
         scale=30  # Adjust the scale as needed
     ).getInfo()
 
@@ -217,19 +218,19 @@ def latest_image():
 
 
 mining = ee.FeatureCollection("projects/sat-io/open-datasets/global-mining/global_mining_polygons")
-Map = geemap.Map(center=(48.458284, -81.240261), zoom=13)
-ROI = ee.Geometry.Point(-81.240261, 48.458284)
+Map = geemap.Map(center=(7.455763, -63.392211), zoom=13)
+ROI = ee.Geometry.Point(-63.392211, 7.455763)
 start_year = 2018
 end_year = 2022
-dome = mining.filter(ee.Filter.inList('AREA', [8.93758181, 3.93418783]))
-Map.addLayer(dome)
+cerro = mining.filter(ee.Filter.eq('system:index', '0000000000000000354a'))
+Map.addLayer(cerro)
 years = ee.List.sequence(start_year, end_year)
 year_list = years.getInfo()
-images_canada = years.map(best_image)
-images_canada = images_canada.add(latest_image())
-count = images_canada.size().getInfo()
-dataset = calc_indices(images_canada, dome)
-st.header("Dome Mine - Timmins, Ontario, Kanada")
+images_wenez = years.map(best_image)
+images_wenez = images_wenez.add(latest_image())
+count = images_wenez.size().getInfo()
+dataset = calc_indices(images_wenez, cerro)
+st.header("Cerro Bolivar - Wenezuela")
 
 # Create a layout containing two columns, one for the map and one for the layer dropdown list.
 row1_col1, row1_col2, row1_col3 = st.columns([1, 2, 1])
