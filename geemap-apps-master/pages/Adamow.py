@@ -58,7 +58,8 @@ def calculate_nmdi(image):
             'NIR': image.select('B8A'),
             'SWIR1': image.select('B11'),
             'SWIR2': image.select('B12')})
-    return nmdi.rename("NMDI").set('year', date)
+    mask = nmdi.lt(2).And(nmdi.gt(0))
+    return nmdi.rename("NMDI").set('year', date).updateMask(mask)
 
 
 def calculate_msavi(image):

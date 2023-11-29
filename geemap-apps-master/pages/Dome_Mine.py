@@ -58,7 +58,8 @@ def calculate_nmdi(image):
             'NIR': image.select('B8A'),
             'SWIR1': image.select('B11'),
             'SWIR2': image.select('B12')})
-    return nmdi.rename("NMDI").set('year', date)
+    mask = nmdi.lt(2).And(nmdi.gt(0))
+    return nmdi.rename("NMDI").set('year', date).updateMask(mask)
 
 
 def calculate_msavi(image):
@@ -81,11 +82,11 @@ def calculate_msi(image):
 def best_image(year):
     start_date = ee.Date.fromYMD(year, 1, 1)
     end_date = start_date.advance(1, 'year')
-    image = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+    image_collection = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
         .filterBounds(ROI) \
         .filterDate(start_date, end_date) \
-        .sort("CLOUDY_PIXEL_PERCENTAGE") \
-        .first()
+        .sort("CLOUDY_PIXEL_PERCENTAGE")
+    image = ee.Image(image_collection.toList(image_collection.size()).get(1))
     return image
 
 
@@ -101,11 +102,11 @@ def calc_indices(images, bound):
     return col
 
 
-def lineplot(index):
+def lineplot(index, bound):
     # Retrieve data in a single call
     stats_data = dataset.select(index).toBands().reduceRegion(
         reducer=reducer,
-        geometry=dome,
+        geometry=bound,
         scale=30  # Adjust the scale as needed
     ).getInfo()
 
@@ -215,6 +216,26 @@ def latest_image():
         .first()
     return image
 
+def plot_hist(year, index):
+    values = get_index(year, index).reduceRegion(
+        reducer=ee.Reducer.toList(),
+        geometry=get_index(year, index).geometry(),
+        scale=40  # Adjust scale as needed
+    ).getInfo()[index]
+
+    # use numpy to generate histogram
+    BINS = 60
+    y, x = np.histogram(values, bins=BINS)
+    # bin edges to midpoint
+    x = [(a + b) / 2 for a, b in zip(x, x[1:])]
+    fig = px.bar(x=x, y=y, color=x, color_continuous_scale=palettes_hist[index]
+                 ).update_layout(title='Histogram rozkładu wartości indeksu', xaxis_title='Wartość',
+                                 yaxis_title='Ilość wystąpień')
+    st.plotly_chart(fig, use_container_width=True)
+
+    if add_legend:
+        Map.add_colorbar(get_vis_params(year, index), label=f"Wartość {index}", layer_name=index + str(year))
+
 
 mining = ee.FeatureCollection("projects/sat-io/open-datasets/global-mining/global_mining_polygons")
 Map = geemap.Map(center=(48.458284, -81.240261), zoom=13)
@@ -248,7 +269,7 @@ with row1_col3:
     year = st.selectbox("Wybierz rok", years)
     index = st.selectbox("Wybierz wskaźnik", indices)
     add_legend = st.checkbox("Pokaż legendę")
-    lineplot(index)
+    lineplot(index, dome)
 
 if year:
     if index:
@@ -257,21 +278,7 @@ if year:
         with (row1_col1):
             st.markdown(text[index], unsafe_allow_html=True)
             st.latex(equations[index])
-            values = get_index(year, index).reduceRegion(
-                reducer=ee.Reducer.toList(),
-                geometry=get_index(year, index).geometry(),
-                scale=40  # Adjust scale as needed
-            ).getInfo()[index]
-
-            # use numpy to generate histogram
-            BINS = 60
-            y, x = np.histogram(values, bins=BINS)
-            # bin edges to midpoint
-            x = [(a + b) / 2 for a, b in zip(x, x[1:])]
-            fig = px.bar(x=x, y=y, color=x, color_continuous_scale=palettes_hist[index]
-                         ).update_layout(title='Histogram rozkładu wartości indeksu', xaxis_title='Wartość',
-                                         yaxis_title='Ilość wystąpień')
-            st.plotly_chart(fig, use_container_width=True)
+            plot_hist(year, index)
 
             if add_legend:
                 Map.add_colorbar(get_vis_params(year, index), label=f"Wartość {index}", layer_name=index + str(year))
@@ -281,3 +288,7 @@ if year:
 else:
     with row1_col2:
         Map.to_streamlit(height=600)
+
+
+def py():
+    return None
