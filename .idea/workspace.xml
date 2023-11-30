@@ -4,11 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c8763755-16c5-48e2-bace-ba72a2a2d1ea" name="Changes" comment="Added mines, big progress">
+    <list default="true" id="c8763755-16c5-48e2-bace-ba72a2a2d1ea" name="Changes" comment="Added more mines, adjusted NMDI">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/geemap-apps-master/pages/Adamow.py" beforeDir="false" afterPath="$PROJECT_DIR$/geemap-apps-master/pages/Adamow.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/geemap-apps-master/pages/Assarel Medet.py" beforeDir="false" afterPath="$PROJECT_DIR$/geemap-apps-master/pages/Assarel Medet.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/geemap-apps-master/pages/Cerro_Bolivar.py" beforeDir="false" afterPath="$PROJECT_DIR$/geemap-apps-master/pages/Cerro_Bolivar.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/geemap-apps-master/pages/Dome_Mine.py" beforeDir="false" afterPath="$PROJECT_DIR$/geemap-apps-master/pages/Dome_Mine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/geemap-apps-master/pages/Kajaran Mine.py" beforeDir="false" afterPath="$PROJECT_DIR$/geemap-apps-master/pages/Kajaran Mine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/geemap-apps-master/pages/Kolomela_Mine.py" beforeDir="false" afterPath="$PROJECT_DIR$/geemap-apps-master/pages/Kolomela_Mine.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/geemap-apps-master/pages/Phu_Kham.py" beforeDir="false" afterPath="$PROJECT_DIR$/geemap-apps-master/pages/Phu_Kham.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -97,7 +100,8 @@
       <workItem from="1701214983613" duration="1854000" />
       <workItem from="1701253921390" duration="5133000" />
       <workItem from="1701270300854" duration="2653000" />
-      <workItem from="1701293248236" duration="415000" />
+      <workItem from="1701293248236" duration="1046000" />
+      <workItem from="1701340575225" duration="638000" />
     </task>
     <task id="LOCAL-00001" summary="sd">
       <option name="closed" value="true" />
@@ -131,7 +135,15 @@
       <option name="project" value="LOCAL" />
       <updated>1701207909836</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Added more mines, adjusted NMDI">
+      <option name="closed" value="true" />
+      <created>1701293709933</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1701293709933</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -159,7 +171,8 @@
     <MESSAGE value="com2" />
     <MESSAGE value="performance" />
     <MESSAGE value="Added mines, big progress" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added mines, big progress" />
+    <MESSAGE value="Added more mines, adjusted NMDI" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added more mines, adjusted NMDI" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/pythonProject1$app.coverage" NAME="app Coverage Results" MODIFIED="1701109931162" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/geemap-apps" />

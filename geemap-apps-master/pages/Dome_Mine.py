@@ -91,15 +91,19 @@ def best_image(year):
 
 
 def calc_indices(images, bound):
-    l = []
-    for index in range(0, count):
-        image = ee.Image(images.get(index)).clipToCollection(bound)
-        im = calculate_ndvi(image).addBands(calculate_ndwi1(image)).addBands(calculate_ndwi2(image)).addBands(
-            calculate_nmdi(image)).addBands(calculate_evi(image)).addBands(
-            calculate_msi(image).addBands(calculate_msavi(image)))
-        l.append(im)
-    col = ee.ImageCollection.fromImages(l)
-    return col
+    return ee.ImageCollection.fromImages(
+        [calculate_indices(ee.Image(images.get(index)).clipToCollection(bound)) for index in range(count)]
+    )
+
+def calculate_indices(image):
+    return (
+        calculate_ndvi(image)
+        .addBands(calculate_ndwi1(image))
+        .addBands(calculate_ndwi2(image))
+        .addBands(calculate_nmdi(image))
+        .addBands(calculate_evi(image))
+        .addBands(calculate_msi(image).addBands(calculate_msavi(image)))
+    )
 
 
 def lineplot(index, bound):
@@ -224,7 +228,7 @@ def plot_hist(year, index):
     ).getInfo()[index]
 
     # use numpy to generate histogram
-    BINS = 60
+    BINS = 20
     y, x = np.histogram(values, bins=BINS)
     # bin edges to midpoint
     x = [(a + b) / 2 for a, b in zip(x, x[1:])]
