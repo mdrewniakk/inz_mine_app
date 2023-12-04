@@ -6,17 +6,6 @@ import plotly.graph_objects as go
 import numpy as np
 
 
-# Get an NLCD image by year.
-@st.cache_data
-def ee_authenticate(token_name="EARTHENGINE_TOKEN"):
-    geemap.ee_initialize(token_name=token_name)
-
-
-ee_authenticate(token_name="EARTHENGINE_TOKEN")
-
-ee.Initialize()
-
-
 def calculate_ndvi(image):
     date = ee.Date(image.get('system:time_start')).get('year')
     image = image.divide(10000)
@@ -59,7 +48,7 @@ def calculate_nmdi(image):
             'SWIR1': image.select('B11'),
             'SWIR2': image.select('B12')})
     mask = nmdi.lt(2).And(nmdi.gt(0))
-    return nmdi.rename("NMDI").set('year', date).updateMask(mask)
+    return nmdi.rename("NMDI").set('year', date)
 
 
 def calculate_msavi(image):
@@ -79,21 +68,23 @@ def calculate_msi(image):
     return msi.rename('MSI').set('year', date)
 
 
-def best_image(year):
+def best_image(year, roi):
     start_date = ee.Date.fromYMD(year, 1, 1)
     end_date = start_date.advance(1, 'year')
-    image_collection = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
-        .filterBounds(ROI) \
+    image = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+        .filterBounds(roi) \
         .filterDate(start_date, end_date) \
-        .sort("CLOUDY_PIXEL_PERCENTAGE")
-    image = ee.Image(image_collection.toList(image_collection.size()).get(1))
+        .sort("CLOUDY_PIXEL_PERCENTAGE") \
+        .first()
     return image
 
 
 def calc_indices(images, bound):
+    count = images.size().getInfo()
     return ee.ImageCollection.fromImages(
         [calculate_indices(ee.Image(images.get(index)).clipToCollection(bound)) for index in range(count)]
     )
+
 
 def calculate_indices(image):
     return (
@@ -106,37 +97,36 @@ def calculate_indices(image):
     )
 
 
-def lineplot(index, bound):
-    # Retrieve data in a single call
-    stats_data = dataset.select(index).toBands().reduceRegion(
+years_fun = [2018, 2019, 2020, 2021, 2022, 2023]
+reducer = ee.Reducer.mean().combine(
+    ee.Reducer.median(), sharedInputs=True).combine(ee.Reducer.mode(), sharedInputs=True)
+
+
+def lineplot(index, bound, data):
+    stats_data = data.select(index).toBands().reduceRegion(
         reducer=reducer,
         geometry=bound,
-        scale=30  # Adjust the scale as needed
+        scale=30
     ).getInfo()
 
-    # Extract mean, median, and mode values using list comprehension
     means = [stats_data[f"{i}_{index}_mean"] for i in range(6)]
     medians = [stats_data[f"{i}_{index}_median"] for i in range(6)]
     modes = [stats_data[f"{i}_{index}_mode"] for i in range(6)]
 
-    # Create the plot
     fig = go.Figure()
 
-    # Add traces for means, medians, and modes
     for name, values in [('Średnia', means), ('Mediana', medians), ('Moda', modes)]:
-        fig.add_trace(go.Scatter(x=years, y=values, mode='lines+markers', name=name))
+        fig.add_trace(go.Scatter(x=years_fun, y=values, mode='lines+markers', name=name))
 
-    # Update layout
     fig.update_layout(
         title=f'Zmiana statystyk indeksu {index} na przestrzeni lat',
         xaxis_title="Rok",
         yaxis_title='Wartość',
-        showlegend=True
+        showlegend=True,
+        height=300,
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
-    # Show the Plotly chart
 
 
 palettes_gee = {"NDWI1": 'RdBu', "NDVI": 'RdYlGn', "NMDI": 'YlGnBu', "EVI": 'Greens', 'MSAVI2': 'YlGn', "NDWI2": "gray",
@@ -190,10 +180,47 @@ equations = {"NDVI": r'''NDVI\:=\:\frac{NIR-RED}{NIR+RED}''',
              "NMDI": r'''NMDI\:=\frac{\left(NIR-SWIR\right)}{\left(NIR\:+\:SWIR\right)}''',
              "MSI": r'''MSI\:=\:\frac{SWIR1}{NIR}''',
              "MSAVI2": r'''MSAVI2\:=\:\frac{2NIR+1-\sqrt{\left(2NIR+1\right)^2-8\left(NIR-RED\right)}}{2}'''}
+text2 = {"NDWI1": '<div style="text-align: justify;">Wartości poniżej zera wskazują obszary bez wód, między 0 a 0,'
+                  '2 oznaczają obszary o niskiej zawartości wód, między 0,2 a 0,5 wskazują na obszary o umiarkowanej '
+                  'zawartości wód, a wartości powyżej 0,5 sugerują obszary o wysokiej zawartości wód. Analiza NDWI '
+                  'umożliwia monitorowanie zmian wody, identyfikację obszarów podatnych na powodzie i ocenę zasobów '
+                  'wodnych, przy uwzględnieniu kontekstu danego obszaru badawczego.</div>',
+         "NDVI": '<div style="text-align: justify;">Wartości bliskie -1 wskazują na obszary bez roślinności lub pokryte '
+                 'śniegiem, a zakresy między -1 a 0 oraz 0 a 0,2 charakteryzują się niską do umiarkowaną roślinnością, '
+                 'obejmując obszary zurbanizowane, pustynie, a także tereny rolnicze. Wartości między 0,2 a 0,'
+                 '5 reprezentują obszary o umiarkowanej roślinności, takie jak obszary leśne czy pastwiska, '
+                 'natomiast wartości powyżej 0,5 wskazują na obszary o wysokiej roślinności, takie jak gęste lasy '
+                 'deszczowe.</div>',
+         "NMDI": '<div style="text-align: justify;">Obszary o wartościach NMDI zbliżonych do 1 sygnalizują brak suszy, '
+                 'co oznacza dostateczny dostęp do wody dla roślinności. Wartości między -1 a 0 wskazują na umiarkowaną '
+                 'suszę, gdzie obszar doświadcza pewnego stopnia deficytu wody, wpływając na zdrowie roślin. W przypadku '
+                 'wartości NMDI poniżej -2 można wnioskować, że obszar ten dotknięty jest poważną suszą, co może prowadzić '
+                 'do znaczącego stresu wodnego dla roślinności.</div>',
+         "MSI": '<div style="text-align: justify;">Wartości powyżej 0 sygnalizują obfitość wilgoci w glebie, '
+                'co może wynikać z intensywnych opadów deszczu lub innych warunków sprzyjających wilgotności. Wartości '
+                'między 0 a -0,5 wskazują na umiarkowany poziom wilgotności, co może być korzystne dla roślinności. '
+                'Obszary o wartościach między -0,5 a -1 doświadczają umiarkowanego do znacznego stresu wilgotnościowego '
+                'roślin, co może wpływać na ich zdrowie.</div>',
+         "MSAVI2": '<div style="text-align: justify;">Wartości poniżej zera sygnalizują obszary o niskiej roślinności lub '
+                   'obszary, gdzie odbicie światła z roślin jest maskowane przez tło glebowe. Zakres między 0 a 0,'
+                   '2 może wskazywać na umiarkowaną roślinność, lecz jednocześnie sugerować, że tło glebowe wpływa na '
+                   'odbicie światła. Obszary o wartościach między 0,2 a 0,5 charakteryzują się umiarkowaną do wysoką '
+                   'roślinnością, gdzie wpływ tła glebowego staje się mniej istotny. Wartości powyżej 0,5 wskazują na '
+                   'obszary o dużej gęstości roślinności, gdzie wpływ tła glebowego jest minimalny.</div>',
+         "EVI": '<div style="text-align: justify;">Zakres między 0 a 0,2 oznacza obszary o niskiej roślinności lub te '
+                'poddane wpływom środowiskowym, takim jak susza czy zanieczyszczenie. Obszary o wartościach między 0,'
+                '2 a 0,5 sugerują umiarkowaną gęstość roślinności, obejmując obszary rolnicze lub lasy o umiarkowanej '
+                'gęstości drzew. Wartości między 0,5 a 0,8 charakteryzują obszary o dużej gęstości roślinności, '
+                'takie jak bujne lasy deszczowe, ogrody czy obszary intensywnego rolnictwa.</div>',
+         "NDWI2": '<div style="text-align: justify;">Wartości poniżej zera wskazują obszary bez wód, między 0 a 0,'
+                  '2 oznaczają obszary o niskiej zawartości wód, między 0,2 a 0,5 wskazują na obszary o umiarkowanej '
+                  'zawartości wód, a wartości powyżej 0,5 sugerują obszary o wysokiej zawartości wód. Analiza NDWI '
+                  'umożliwia monitorowanie zmian wody, identyfikację obszarów podatnych na powodzie i ocenę zasobów '
+                  'wodnych, przy uwzględnieniu kontekstu danego obszaru badawczego.</div>'}
 
 
-def get_vis_params(year, index):
-    nlcd = dataset.filter(ee.Filter.eq("year", year)).first()
+def get_vis_params(year, index, data):
+    nlcd = data.filter(ee.Filter.eq("year", year)).first()
     im = nlcd.select(index)
     mean = im.reduceRegion(
         ee.Reducer.mean(), scale=40).getInfo()[index]
@@ -207,86 +234,31 @@ def get_vis_params(year, index):
     return vis_param
 
 
-def get_index(year, index):
-    nlcd = dataset.filter(ee.Filter.eq("year", year)).first()
+def get_index(year, index, data):
+    nlcd = data.filter(ee.Filter.eq("year", year)).first()
     return nlcd.select(index)
 
 
-def latest_image():
+def latest_image(roi):
     image = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
-        .filterBounds(ROI) \
+        .filterBounds(roi) \
         .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 10)) \
         .sort('system:time_start', False) \
         .first()
     return image
 
 
-def plot_hist(year, index):
-    values = get_index(year, index).reduceRegion(
+def plot_hist(year, index, data):
+    values = get_index(year, index, data).reduceRegion(
         reducer=ee.Reducer.toList(),
-        geometry=get_index(year, index).geometry(),
-        scale=40  # Adjust scale as needed
+        geometry=get_index(year, index, data).geometry(),
+        scale=40
     ).getInfo()[index]
 
-    # use numpy to generate histogram
     BINS = 20
     y, x = np.histogram(values, bins=BINS)
-    # bin edges to midpoint
     x = [(a + b) / 2 for a, b in zip(x, x[1:])]
     fig = px.bar(x=x, y=y, color=x, color_continuous_scale=palettes_hist[index]
-                 ).update_layout(title='Histogram rozkładu wartości indeksu', xaxis_title='Wartość',
-                                 yaxis_title='Ilość wystąpień')
+                 ).update_layout(title=f'Histogram rozkładu wartości {index}', xaxis_title='Wartość',
+                                 yaxis_title='Ilość wystąpień', height=500)
     st.plotly_chart(fig, use_container_width=True)
-
-    if add_legend:
-        Map.add_colorbar(get_vis_params(year, index), label=f"Wartość {index}", layer_name=index + str(year))
-
-
-mining = ee.FeatureCollection("projects/sat-io/open-datasets/global-mining/global_mining_polygons")
-Map = geemap.Map(center=(-28.385406, 22.959684), zoom=13)
-ROI = ee.Geometry.Point(22.959684, -28.385406)
-start_year = 2018
-end_year = 2022
-kolomela = mining.filter(ee.Filter.eq("system:index", "00000000000000002655"))
-Map.addLayer(kolomela)
-years = ee.List.sequence(start_year, end_year)
-year_list = years.getInfo()
-images_rpa = years.map(best_image)
-images_rpa = images_rpa.add(latest_image())
-count = images_rpa.size().getInfo()
-dataset = calc_indices(images_rpa, kolomela)
-st.header("Kolomela Mine - Republika Południowej Afryki")
-
-# Create a layout containing two columns, one for the map and one for the layer dropdown list.
-row1_col1, row1_col2, row1_col3 = st.columns([1, 2, 1])
-
-# Create an interactive map
-reducer = ee.Reducer.mean().combine(
-    ee.Reducer.median(), sharedInputs=True).combine(ee.Reducer.mode(), sharedInputs=True)
-
-# Convert the reduced collection to a FeatureCollection
-
-
-# Select the seven NLCD epochs after 2000.
-years = [2018, 2019, 2020, 2021, 2022, 2023]
-indices = ['NDVI', 'EVI', 'NDWI1', 'NDWI2', 'NMDI', 'MSI', 'MSAVI2']
-with row1_col3:
-    year = st.selectbox("Wybierz rok", years)
-    index = st.selectbox("Wybierz wskaźnik", indices)
-    add_legend = st.checkbox("Pokaż legendę")
-    lineplot(index, kolomela)
-
-if year:
-    if index:
-        Map.addLayer(get_index(year, index), get_vis_params(year, index), index + str(year))
-
-        with (row1_col1):
-            st.markdown(text[index], unsafe_allow_html=True)
-            st.latex(equations[index])
-            plot_hist(year, index)
-            with row1_col2:
-                Map.to_streamlit(height=600)
-
-else:
-    with row1_col2:
-        Map.to_streamlit(height=600)
