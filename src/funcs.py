@@ -4,31 +4,35 @@ import geemap.foliumap as geemap
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
+@st.cache_data
+def ee_authenticate(token_name="EARTHENGINE_TOKEN"):
+    geemap.ee_initialize(token_name=token_name)
 
 
+ee_authenticate(token_name="EARTHENGINE_TOKEN")
 def calculate_ndvi(image):
-    date = ee.Date(image.get('system:time_start')).get('year')
+    date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo()
     image = image.divide(10000)
     return (image.select('B8').subtract(image.select('B4'))).divide(image.select('B8').add(image.select('B4'))).rename(
-        'NDVI').set('year', date)
+        'NDVI').set('date', date)
 
 
 def calculate_ndwi1(image):
-    date = ee.Date(image.get('system:time_start')).get('year')
+    date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo()
     image = image.divide(10000)
     return (image.select('B8A').subtract(image.select('B12'))).divide(
-        image.select('B8A').add(image.select('B12'))).rename('NDWI1').set('year', date)
+        image.select('B8A').add(image.select('B12'))).rename('NDWI1').set('date', date)
 
 
 def calculate_ndwi2(image):
-    date = ee.Date(image.get('system:time_start')).get('year')
+    date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo()
     image = image.divide(10000)
     return (image.select('B3').subtract(image.select('B8'))).divide(image.select('B8').add(image.select('B3'))).rename(
-        'NDWI2').set('year', date)
+        'NDWI2').set('date', date)
 
 
 def calculate_evi(image):
-    date = ee.Date(image.get('system:time_start')).get('year')
+    date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo()
     image = image.divide(10000)
     evi = image.expression(
         '2.5 * (NIR - RED) / (NIR + 6 * RED - 7.5 * BLUE + 1)', {
@@ -36,11 +40,11 @@ def calculate_evi(image):
             'RED': image.select('B4'),
             'BLUE': image.select('B2')
         })
-    return evi.rename('EVI').set('year', date)
+    return evi.rename('EVI').set('date', date)
 
 
 def calculate_nmdi(image):
-    date = ee.Date(image.get('system:time_start')).get('year')
+    date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo()
     image = image.divide(10000)
     nmdi = image.expression(
         '(NIR - (SWIR1-SWIR2)) / (NIR + (SWIR1 - SWIR2))', {
@@ -48,36 +52,61 @@ def calculate_nmdi(image):
             'SWIR1': image.select('B11'),
             'SWIR2': image.select('B12')})
     mask = nmdi.lt(2).And(nmdi.gt(0))
-    return nmdi.rename("NMDI").set('year', date)
+    return nmdi.rename("NMDI").set('date', date)
 
 
 def calculate_msavi(image):
-    date = ee.Date(image.get('system:time_start')).get('year')
+    date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo()
     image = image.divide(10000)
     msavi = image.expression(
         '(2*NIR + 1 - sqrt((2*NIR+1)**2-8*(NIR-RED)))/2', {
             'NIR': image.select('B8'),
             'RED': image.select('B4')})
-    return msavi.rename('MSAVI2').set('year', date)
+    return msavi.rename('MSAVI2').set('date', date)
 
 
 def calculate_msi(image):
-    date = ee.Date(image.get('system:time_start')).get('year')
+    date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo()
     image = image.divide(10000)
     msi = image.select('B11').divide(image.select('B8A'))
-    return msi.rename('MSI').set('year', date)
+    return msi.rename('MSI').set('date', date)
+
+
+ims = {2018: ['0', '1'], 2019: ['2', '3'], 2020: ['4', '5'], 2021: ['6', '7'], 2022: ['8', '9'], 2023: ['10', '11']}
 
 
 def best_image(year, roi):
-    start_date = ee.Date.fromYMD(year, 1, 1)
-    end_date = start_date.advance(1, 'year')
-    image = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+    start_date_may = ee.Date.fromYMD(year, 5, 1)
+    end_date_may = start_date_may.advance(1, 'month')
+
+    start_date_aug = ee.Date.fromYMD(year, 8, 1)
+    end_date_aug = start_date_aug.advance(1, 'month')
+
+    # Filter for May and August images
+    may = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
         .filterBounds(roi) \
-        .filterDate(start_date, end_date) \
+        .filterDate(start_date_may, end_date_may) \
+        .sort("CLOUDY_PIXEL_PERCENTAGE").first()
+
+    aug = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+        .filterBounds(roi) \
+        .filterDate(start_date_aug, end_date_aug) \
         .sort("CLOUDY_PIXEL_PERCENTAGE") \
         .first()
-    return image
 
+    # Get a list of images
+    images_list = ee.List([may, aug])
+
+    return images_list
+
+def get_dates(index, data):
+    image_list = ee.ImageCollection(data.select(index)).toList(12)
+    dates = []
+    for i in range(12):
+        image = ee.Image(image_list.get(i))
+        date = image.get('date').getInfo()
+        dates.append(date)
+    return dates
 
 def calc_indices(images, bound):
     count = images.size().getInfo()
@@ -102,28 +131,29 @@ reducer = ee.Reducer.mean().combine(
     ee.Reducer.median(), sharedInputs=True).combine(ee.Reducer.mode(), sharedInputs=True)
 
 
-def lineplot(index, bound, data):
+def lineplot(index, bound, data, time):
     stats_data = data.select(index).toBands().reduceRegion(
         reducer=reducer,
         geometry=bound,
         scale=30
     ).getInfo()
 
-    means = [stats_data[f"{i}_{index}_mean"] for i in range(6)]
-    medians = [stats_data[f"{i}_{index}_median"] for i in range(6)]
-    modes = [stats_data[f"{i}_{index}_mode"] for i in range(6)]
+    means = [stats_data[f"{i}_{index}_mean"] for i in range(12)]
+    medians = [stats_data[f"{i}_{index}_median"] for i in range(12)]
+    modes = [stats_data[f"{i}_{index}_mode"] for i in range(12)]
 
     fig = go.Figure()
 
     for name, values in [('Średnia', means), ('Mediana', medians), ('Moda', modes)]:
-        fig.add_trace(go.Scatter(x=years_fun, y=values, mode='lines+markers', name=name))
+        fig.add_trace(go.Scatter(x=time, y=values, mode='lines+markers', name=name))
 
     fig.update_layout(
         title=f'Zmiana statystyk indeksu {index} na przestrzeni lat',
-        xaxis_title="Rok",
+        xaxis_title="Data",
         yaxis_title='Wartość',
         showlegend=True,
         height=300,
+        xaxis={'type': 'category'},
     )
 
     st.plotly_chart(fig, use_container_width=True)
@@ -219,23 +249,31 @@ text2 = {"NDWI1": '<div style="text-align: justify;">Wartości poniżej zera wsk
                   'wodnych, przy uwzględnieniu kontekstu danego obszaru badawczego.</div>'}
 
 
-def get_vis_params(year, index, data):
-    nlcd = data.filter(ee.Filter.eq("year", year)).first()
-    im = nlcd.select(index)
-    mean = im.reduceRegion(
-        ee.Reducer.mean(), scale=40).getInfo()[index]
-    sd = im.reduceRegion(
-        ee.Reducer.stdDev(), scale=40).getInfo()[index]
-    vis_param = {
-        'min': mean - (sd * 3),
-        'max': mean + (sd * 3),
-        'palette': palettes_gee[index],
-    }
-    return vis_param
+def get_vis_params(index):
+    vis_params = {"NDVI": {'min': -1,
+                           'max': 1,
+                           'palette': palettes_gee[index]}, "NDWI1": {'min': -1,
+                           'max': 1,
+                           'palette': palettes_gee[index]}, "NDWI2": {'min': -1,
+                           'max': 1,
+                           'palette': palettes_gee[index]}, "NMDI": {'min': 0,
+                           'max': 1,
+                           'palette': palettes_gee[index]}, "EVI": {'min': -1,
+                           'max': 1,
+                           'palette': palettes_gee[index]}, "MSAVI2": {'min': -1,
+                           'max': 1,
+                           'palette': palettes_gee[index]}, "MSI": {'min': 0,
+                           'max': 3,
+                           'palette': palettes_gee[index]}}
+
+    return vis_params[index]
 
 
 def get_index(year, index, data):
-    nlcd = data.filter(ee.Filter.eq("year", year)).first()
+    nlcd = data.filter(ee.Filter.Or(
+            ee.Filter.eq("system:index", ims[year][0]),
+            ee.Filter.eq("system:index", ims[year][1])
+        ))
     return nlcd.select(index)
 
 
@@ -248,10 +286,11 @@ def latest_image(roi):
     return image
 
 
-def plot_hist(year, index, data):
-    values = get_index(year, index, data).reduceRegion(
+def plot_hist(year, index, data, number):
+    x = ee.Image(get_index(year, index, data).toList(2).get(number))
+    values = x.reduceRegion(
         reducer=ee.Reducer.toList(),
-        geometry=get_index(year, index, data).geometry(),
+        geometry=x.geometry(),
         scale=40
     ).getInfo()[index]
 
@@ -260,5 +299,5 @@ def plot_hist(year, index, data):
     x = [(a + b) / 2 for a, b in zip(x, x[1:])]
     fig = px.bar(x=x, y=y, color=x, color_continuous_scale=palettes_hist[index]
                  ).update_layout(title=f'Histogram rozkładu wartości {index}', xaxis_title='Wartość',
-                                 yaxis_title='Ilość wystąpień', height=500)
-    st.plotly_chart(fig, use_container_width=True)
+                                 yaxis_title='Ilość wystąpień')
+    st.plotly_chart(fig, use_container_width=True, height=400)
