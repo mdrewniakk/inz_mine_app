@@ -13,30 +13,20 @@ def ee_authenticate(token_name="EARTHENGINE_TOKEN"):
 
 @st.cache_data
 def get_dates_cache():
-    return get_dates(index, get_data()[2])
+    return get_dates(index, get_data()[1])
 
 
 ee_authenticate(token_name="EARTHENGINE_TOKEN")
 ee.Initialize()
 
-
-
-
-
-
 mining = ee.FeatureCollection("projects/sat-io/open-datasets/global-mining/global_mining_polygons")
-kajaran = mining.filter(ee.Filter.inList('AREA', [4.46054124, 0.94310862, 0.9555462, 0.40513458]))
+cerro = mining.filter(ee.Filter.eq("system:index", "0000000000000000354a"))
+st.header("Cerro Bolivar - Wenezuela")
 
 
-st.header("Kajaran Mine - Armenia")
-
-
-Map = geemap.Map(center=(39.146828, 46.147651), zoom=13)
-Map.addLayer(kajaran)
-
-
-
-
+# Convert the reduced collection to a FeatureCollection
+Map = geemap.Map(center=(7.454339, -63.384707), zoom=13)
+Map.addLayer(cerro)
 
 # Select the seven NLCD epochs after 2000.
 indices = ['NDVI', 'EVI', 'NDWI1', 'NDWI2', 'NMDI', 'MSI', 'MSAVI2']
@@ -46,13 +36,13 @@ indices = ['NDVI', 'EVI', 'NDWI1', 'NDWI2', 'NMDI', 'MSI', 'MSAVI2']
 with row1_col3, st.container(border=True):
     year = st.selectbox("Wybierz rok", years_fun)
     index = st.selectbox("Wybierz wskaźnik", indices)
-    lineplot(index, kajaran, get_data()[2], get_dates_cache())
+    lineplot(index, cerro, get_data()[1], get_dates_cache())
     st.markdown(text2[index], unsafe_allow_html=True)
 
 if year:
     if index:
-        Map.addLayer(ee.Image(get_index(year, index, get_data()[2]).toList(2).get(0)), get_vis_params(index), f"{index} Maj {year}")
-        Map.addLayer(ee.Image(get_index(year, index, get_data()[2]).toList(2).get(1)), get_vis_params(index), f"{index} Sierpień {year}")
+        Map.addLayer(ee.Image(get_index(year, index, get_data()[1]).toList(2).get(0)), get_vis_params(index), f"{index} Maj {year}")
+        Map.addLayer(ee.Image(get_index(year, index, get_data()[1]).toList(2).get(1)), get_vis_params(index), f"{index} Sierpień {year}")
         with row1_col1, st.container(border=True):
             st.markdown(text[index], unsafe_allow_html=True)
             st.markdown('''
@@ -65,9 +55,9 @@ if year:
                         )
             st.latex(equations[index])
             with st.expander("Histogram dla maja", True):
-                plot_hist(year, index, get_data()[2], 0)
+                plot_hist(year, index, get_data()[1], 0)
             with st.expander("Histogram dla sierpnia"):
-                plot_hist(year, index, get_data()[2], 1)
+                plot_hist(year, index, get_data()[1], 1)
             Map.add_colorbar(get_vis_params(index), label=f"Wartość {index}",
                              layer_name=index + str(year))
 

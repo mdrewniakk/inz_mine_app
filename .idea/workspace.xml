@@ -4,18 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="24b9ba51-395c-4d8b-bc2e-11e00d97f5d0" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase__Changes_.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase__Changes_1.xml" beforeDir="false" />
+    <list default="true" id="24b9ba51-395c-4d8b-bc2e-11e00d97f5d0" name="Changes" comment="may and august">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Strona_glowna.py" beforeDir="false" afterPath="$PROJECT_DIR$/Strona_glowna.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/Adamow.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/Adamow.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/Assarel Medet.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/Assarel Medet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/Cerro_Bolivar.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/Dome_Mine.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/Kajaran Mine.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/Kajaran Mine.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/Kolomela_Mine.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/Phu_Kham.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/Assarel Medet.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/Cerro Bolivar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/Kajaran Mine.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/Kolomela_Mine.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/funcs.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/funcs.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -32,6 +25,20 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;mdrewniakk&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="selectedUrlAndAccountId">
+      <UrlAndAccount>
+        <option name="accountId" value="438bd2f8-007f-4322-9c58-2c1afe2bf8d8" />
+        <option name="url" value="https://github.com/mdrewniakk/inz_mine_app.git" />
+      </UrlAndAccount>
+    </option>
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -117,8 +124,18 @@
       <workItem from="1701946311440" duration="156000" />
       <workItem from="1702300644776" duration="5357000" />
       <workItem from="1702410894072" duration="312000" />
-      <workItem from="1702559913008" duration="3646000" />
+      <workItem from="1702559913008" duration="5623000" />
+      <workItem from="1702846784641" duration="1759000" />
     </task>
+    <task id="LOCAL-00001" summary="may and august">
+      <option name="closed" value="true" />
+      <created>1702563767201</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1702563767201</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -134,6 +151,10 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="may and august" />
+    <option name="LAST_COMMIT_MESSAGE" value="may and august" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/pythonProject1$app.coverage" NAME="app Coverage Results" MODIFIED="1701381740558" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/inz_mine_app/geemap-apps-master" />

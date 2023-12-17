@@ -83,12 +83,12 @@ def best_image(year, roi):
     end_date_aug = start_date_aug.advance(1, 'month')
 
     # Filter for May and August images
-    may = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+    may = ee.ImageCollection('COPERNICUS/S2_HARMONIZED') \
         .filterBounds(roi) \
         .filterDate(start_date_may, end_date_may) \
         .sort("CLOUDY_PIXEL_PERCENTAGE").first()
 
-    aug = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+    aug = ee.ImageCollection('COPERNICUS/S2_HARMONIZED') \
         .filterBounds(roi) \
         .filterDate(start_date_aug, end_date_aug) \
         .sort("CLOUDY_PIXEL_PERCENTAGE") \
@@ -226,11 +226,10 @@ text2 = {"NDWI1": '<div style="text-align: justify;">Wartości poniżej zera wsk
                  'suszę, gdzie obszar doświadcza pewnego stopnia deficytu wody, wpływając na zdrowie roślin. W przypadku '
                  'wartości NMDI poniżej -2 można wnioskować, że obszar ten dotknięty jest poważną suszą, co może prowadzić '
                  'do znaczącego stresu wodnego dla roślinności.</div>',
-         "MSI": '<div style="text-align: justify;">Wartości powyżej 0 sygnalizują obfitość wilgoci w glebie, '
-                'co może wynikać z intensywnych opadów deszczu lub innych warunków sprzyjających wilgotności. Wartości '
-                'między 0 a -0,5 wskazują na umiarkowany poziom wilgotności, co może być korzystne dla roślinności. '
-                'Obszary o wartościach między -0,5 a -1 doświadczają umiarkowanego do znacznego stresu wilgotnościowego '
-                'roślin, co może wpływać na ich zdrowie.</div>',
+         "MSI": '<div style="text-align: justify;">Zastosowania wskaźnika MSI obejmują analizę stresu korony drzew, '
+                'prognozowanie i modelowanie produktywności, analizę warunków zagrożenia pożarowego oraz badania '
+                'fizjologii ekosystemów. Wartości tego indeksu wahają się od 0 do ponad 3. Typowy zakres dla zielonej '
+                'roślinności to od 0,4 do 2.</div>',
          "MSAVI2": '<div style="text-align: justify;">Wartości poniżej zera sygnalizują obszary o niskiej roślinności lub '
                    'obszary, gdzie odbicie światła z roślin jest maskowane przez tło glebowe. Zakres między 0 a 0,'
                    '2 może wskazywać na umiarkowaną roślinność, lecz jednocześnie sugerować, że tło glebowe wpływa na '

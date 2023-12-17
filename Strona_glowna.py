@@ -21,15 +21,19 @@ def get_data():
     mining = ee.FeatureCollection("projects/sat-io/open-datasets/global-mining/global_mining_polygons")
     adamow = mining.filter(ee.Filter.eq("system:index", "000000000000000016ed"))
     dataset1 = calc_indices(images_pol, adamow)
-    ROI2 = ee.Geometry.Point(24.117110, 42.549279)
-    images_bga = years.map(lambda year: best_image(ee.Number(year), ROI2)).flatten()
-    assarel = mining.filter(ee.Filter.inList('AREA', [6.47028179, 9.57015368]))
-    dataset2 = calc_indices(images_bga, assarel)
-    ROI3 = ee.Geometry.Point(46.147651, 39.146828)
-    images_arm = years.map(lambda year: best_image(ee.Number(year), ROI3)).flatten()
-    kajaran = mining.filter(ee.Filter.inList('AREA', [4.46054124, 0.94310862, 0.9555462, 0.40513458]))
-    dataset3 = calc_indices(images_arm, kajaran)
-    data_list = [dataset1, dataset2, dataset3]
+    ROI2 = ee.Geometry.Point(-63.384707, 7.454339)
+    images_ven = years.map(lambda year: best_image(ee.Number(year), ROI2)).flatten()
+    cerro = mining.filter(ee.Filter.eq("system:index", "0000000000000000354a"))
+    dataset2 = calc_indices(images_ven, cerro)
+    ROI3 = ee.Geometry.Point(-81.240261, 48.458284)
+    images_can = years.map(lambda year: best_image(ee.Number(year), ROI3)).flatten()
+    dome = mining.filter(ee.Filter.inList('AREA', [8.93758181, 3.93418783]))
+    dataset3 = calc_indices(images_can, dome)
+    ROI4 = ee.Geometry.Point(22.968868, -28.393550)
+    images_rpa = years.map(lambda year: best_image(ee.Number(year), ROI4)).flatten()
+    kolomela = mining.filter(ee.Filter.eq("system:index", "00000000000000002655"))
+    dataset4 = calc_indices(images_rpa, kolomela)
+    data_list = [dataset1, dataset2, dataset3, dataset4]
     return data_list
 
 
